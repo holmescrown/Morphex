@@ -1,0 +1,8 @@
+{
+  "name": "开箱即用型无代码 Agent 平台",
+  "description": "Enterprise-grade no-code AI Agent visual workflow builder and execution engine with strict typing, deterministic state machines, and real-time trace telemetry.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
