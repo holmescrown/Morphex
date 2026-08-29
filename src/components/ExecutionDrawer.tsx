@@ -78,31 +78,41 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
   };
 
   return (
-    <div
-      id="execution-drawer-overlay"
-      className="fixed inset-y-0 right-0 w-[540px] bg-slate-900 border-l border-slate-800 text-slate-200 z-50 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200"
-    >
-      {/* Drawer Header */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm text-white">工作流执行与实时遥测</h3>
-            <p className="text-xs text-slate-400 font-mono">
-              Target: {workflow.name}
-            </p>
-          </div>
-        </div>
+    <>
+      {/* Mobile Backdrop */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 md:hidden animate-in fade-in duration-200"
+      />
 
-        <button
-          onClick={onClose}
-          className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+      <div
+        id="execution-drawer-overlay"
+        className="fixed inset-x-0 bottom-0 max-h-[90vh] h-[85vh] w-full rounded-t-2xl border-t border-slate-700 bg-slate-900 text-slate-200 z-50 shadow-2xl flex flex-col md:inset-y-0 md:bottom-auto md:right-0 md:left-auto md:w-[540px] md:h-full md:rounded-none md:border-t-0 md:border-l md:border-slate-800 animate-in slide-in-from-bottom md:slide-in-from-right duration-200"
+      >
+        {/* Mobile Pull Handle */}
+        <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto my-2 md:hidden shrink-0" />
+
+        {/* Drawer Header */}
+        <div className="p-3.5 sm:p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
+              <Activity className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-white">工作流执行与实时遥测</h3>
+              <p className="text-xs text-slate-400 font-mono truncate max-w-[200px] sm:max-w-xs">
+                Target: {workflow.name}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
       {/* Input Parameters Box */}
       <div className="p-4 border-b border-slate-800/80 bg-slate-950/30 space-y-3">
@@ -345,5 +355,6 @@ export const ExecutionDrawer: React.FC<ExecutionDrawerProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };

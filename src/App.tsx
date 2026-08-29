@@ -1,5 +1,10 @@
+// MODIFIED: Updated App to route System Flow Canvas, Workspace Chat, Approvals & Cards losslessly
 import React, { useState, useEffect } from "react";
 import { AppShell, ShellTab, EXPERT_ONLY_TABS } from "./components/AppShell.tsx";
+import { SystemFlowCanvas } from "./components/SystemFlowCanvas.tsx";
+import { QuickStartWizard, QuickStartScenarioId } from "./components/QuickStartWizard.tsx";
+import { WorkspaceChatView } from "./components/WorkspaceChatView.tsx";
+import { WorkspaceCardsView, CardViewCategory } from "./components/WorkspaceCardsView.tsx";
 import { WorkflowCanvas } from "./components/WorkflowCanvas.tsx";
 import { NodeInspector } from "./components/NodeInspector.tsx";
 import { ExecutionDrawer } from "./components/ExecutionDrawer.tsx";
@@ -10,6 +15,10 @@ import { ExecutionHistory } from "./components/ExecutionHistory.tsx";
 import { TemplatesModal } from "./components/TemplatesModal.tsx";
 import { DynamicModulesView } from "./components/DynamicModulesView.tsx";
 import { AutomationTasksView } from "./components/AutomationTasksView.tsx";
+import { ComponentHubView, HubAsset } from "./components/ComponentHubView.tsx";
+import { McpMarketplaceView } from "./components/McpMarketplaceView.tsx";
+import { PublicApisAggregatorView } from "./components/PublicApisAggregatorView.tsx";
+import { WorkspaceChatDrawer } from "./components/WorkspaceChatDrawer.tsx";
 import { McpSkillsView } from "./components/McpSkillsView.tsx";
 import { FieldMigrationView } from "./components/FieldMigrationView.tsx";
 import { JsonbConcurrencyView } from "./components/JsonbConcurrencyView.tsx";
@@ -37,13 +46,13 @@ import { executeWorkflow } from "./lib/engine.ts";
 export default function App() {
   const { isExpertMode } = useModeStore();
 
-  // Navigation State: 默认首页为“动态业务模块”，杜绝在小白模式下直接打开底层 DAG 连线画布
-  const [activeTab, setActiveTab] = useState<ShellTab>("modules");
+  // Navigation State: 默认核心首页为“系统架构图画布 (System Flow Canvas)”
+  const [activeTab, setActiveTab] = useState<ShellTab>("architecture");
 
   // 严格路由守卫：业务模式下禁止进入专家专属路由
   useEffect(() => {
     if (!isExpertMode && EXPERT_ONLY_TABS.includes(activeTab)) {
-      setActiveTab("modules");
+      setActiveTab("architecture");
     }
   }, [isExpertMode, activeTab]);
 
@@ -110,7 +119,7 @@ export default function App() {
     const newAgent: Agent = {
       id,
       name: "新上岗 AI 员工",
-      description: "负责业务数据自动核对与客户线索分发",
+      description: "跨领域自动化与协同分析助手",
       avatar: "⚡",
       category: "General",
       isPublished: true,
@@ -120,7 +129,7 @@ export default function App() {
         temperature: 0.2,
         maxTokens: 2048,
         topP: 0.95,
-        systemPrompt: "你是一个专业的智能 Agent 助手，高效协助业务人员处理流程自动化。",
+        systemPrompt: "你是一个专业的智能 Agent 助手，高效协助团队处理流程自动化与协同决策。",
       },
       promptTemplate: "{{user_input}}",
       tools: ["calculator", "json_formatter"],
@@ -133,6 +142,34 @@ export default function App() {
 
   const handleDeleteAgent = (agentId: string) => {
     setAgents((prev) => prev.filter((a) => a.id !== agentId));
+  };
+
+  // Fork asset from Component Hub
+  const handleForkAsset = (asset: HubAsset) => {
+    if (asset.type === "agent") {
+      const newAgent: Agent = {
+        id: "agent_fork_" + Math.random().toString(36).substring(2, 8),
+        name: `${asset.title} (Fork)`,
+        description: asset.description,
+        avatar: asset.author.avatar || "🤖",
+        category: asset.domain,
+        isPublished: true,
+        modelConfig: {
+          model: "gemini-3.7-flash",
+          provider: "google",
+          temperature: 0.2,
+          maxTokens: 2048,
+          topP: 0.95,
+          systemPrompt: `你是基于【${asset.title}】的专业 AI 员工。`,
+        },
+        promptTemplate: "{{user_input}}",
+        tools: ["calculator", "json_formatter"],
+        knowledgeBases: ["kb_enterprise_policies"],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setAgents((prev) => [newAgent, ...prev]);
+    }
   };
 
   // Execute Workflow Runner
@@ -184,6 +221,31 @@ export default function App() {
     }
   };
 
+  // Helper to check if activeTab is a Card Category
+  const isCardCategory = (
+    tab: ShellTab
+  ): tab is CardViewCategory => {
+    const cardTabs: ShellTab[] = [
+      "approvals",
+      "calendar",
+      "today",
+      "assigned",
+      "inbox",
+      "followups",
+      "quick_notes",
+      "shared_notes",
+      "interaction_reports",
+      "marketing_strategies",
+      "customers",
+      "quotes",
+      "products",
+      "pi_management",
+      "production_orders",
+      "payments",
+    ];
+    return cardTabs.includes(tab);
+  };
+
   return (
     <AppShell
       activeTab={activeTab}
@@ -204,10 +266,77 @@ export default function App() {
       }}
       isExecuting={isExecuting}
     >
-      {/* 1. 动态业务模块与数据记录 (业务模式默认首页) */}
+      {/* 1. 核心视图: 系统架构图画布 (System Flow Canvas) 与 顶部新手向导 (QuickStartWizard) */}
+      {(activeTab === "architecture" ||
+        activeTab === "trade_company" ||
+        activeTab === "devops_dept" ||
+        activeTab === "finance_dept") && (
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Quick Start Onboarding Ribbon directly above canvas */}
+          <div className="p-3 sm:p-4 pb-0 shrink-0 z-20">
+            <QuickStartWizard
+              onSelectScenario={(scenarioId: QuickStartScenarioId) => {
+                if (scenarioId === "lead_scoring") {
+                  // 场景 1：「商机与询盘自动评分」 -> 导航至商机任务 / AI员工中心
+                  setActiveTab("today");
+                } else if (scenarioId === "finance_hitl") {
+                  // 场景 2：「财务合规与资金审批拦截」 -> 直接跳转至包含 HITL 审批拦截的任务视图
+                  setActiveTab("approvals");
+                } else if (scenarioId === "rag_qa") {
+                  // 场景 3：「企业知识库 RAG 问答」 -> 直接跳转至带有预置文档的 Agent 问答界面
+                  setActiveTab("knowledge");
+                }
+              }}
+            />
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <SystemFlowCanvas
+              onNavigateToAgent={(agentId) => {
+                setActiveTab("agents");
+              }}
+              onNavigateToModule={() => {
+                setActiveTab("modules");
+              }}
+              onOpenChat={() => {
+                setActiveTab("chat");
+              }}
+              onNavigateToTab={(tab) => {
+                setActiveTab(tab as any);
+              }}
+              onSelectQuickScenario={(scenarioId: QuickStartScenarioId) => {
+                if (scenarioId === "lead_scoring") {
+                  // 场景 1：「商机与询盘自动评分」 -> 导航至商机任务 / AI员工中心
+                  setActiveTab("today");
+                } else if (scenarioId === "finance_hitl") {
+                  // 场景 2：「财务合规与资金审批拦截」 -> 直接跳转至包含 HITL 审批拦截的任务视图
+                  setActiveTab("approvals");
+                } else if (scenarioId === "rag_qa") {
+                  // 场景 3：「企业知识库 RAG 问答」 -> 直接跳转至带有预置文档的 Agent 问答界面
+                  setActiveTab("knowledge");
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 2. 工具箱内置即时交流中心 (Workspace Chat) */}
+      {activeTab === "chat" && <WorkspaceChatView />}
+
+      {/* 3. 业务卡片、待批阅、行事历与笔记清单视图 (Workspace Cards) */}
+      {isCardCategory(activeTab) && (
+        <WorkspaceCardsView
+          category={activeTab}
+          onOpenCanvas={() => setActiveTab("architecture")}
+          onOpenChat={() => setActiveTab("chat")}
+        />
+      )}
+
+      {/* 4. 跨领域动态业务空间 (Universal Modules) */}
       {activeTab === "modules" && <DynamicModulesView />}
 
-      {/* 2. AI 员工配置 (双模自适应: 小白轻量卡片 / 专家全量参数) */}
+      {/* 5. AI 员工配置 (双模自适应: 协同卡片 / 专家参数) */}
       {activeTab === "agents" && (
         <AgentStudio
           agents={agents}
@@ -220,7 +349,23 @@ export default function App() {
         />
       )}
 
-      {/* 3. 企业知识库 (RAG) */}
+      {/* 6. 跨领域公共资产广场 (Universal Components Hub) */}
+      {activeTab === "hub" && <ComponentHubView onForkAsset={handleForkAsset} />}
+
+      {/* 7. MCP 官方生态市场 (One-Click Connectors Marketplace) */}
+      {activeTab === "mcp_market" && <McpMarketplaceView />}
+
+      {/* 7.5. Public APIs 清洗与垂直聚合 API 引擎 */}
+      {activeTab === "public_apis" && (
+        <PublicApisAggregatorView
+          onRegisterSystemTool={(newTool) => {
+            setTools((prev) => [newTool, ...prev.filter((t) => t.id !== newTool.id)]);
+          }}
+          onNavigateToAgentStudio={() => setActiveTab("agents")}
+        />
+      )}
+
+      {/* 8. 企业知识库 (RAG) */}
       {activeTab === "knowledge" && (
         <KnowledgeManager
           knowledgeBases={knowledgeBases}
@@ -230,10 +375,10 @@ export default function App() {
         />
       )}
 
-      {/* 4. 自动化任务队列 */}
+      {/* 9. 自动化任务队列 */}
       {activeTab === "tasks" && <AutomationTasksView />}
 
-      {/* 5. 专家模式: 工作流可视化画布 (DAG 节点连线) */}
+      {/* 10. 专家模式: 工作流可视化画布 (DAG 节点连线) */}
       {activeTab === "workflows" && isExpertMode && currentWorkflow && (
         <div className="flex-1 flex w-full h-full overflow-hidden">
           <WorkflowCanvas
@@ -258,27 +403,40 @@ export default function App() {
         </div>
       )}
 
-      {/* 6. 专家模式: MCP 原子技能注册表 */}
+      {/* 11. 专家模式: MCP 原子技能注册表 */}
       {activeTab === "skills" && isExpertMode && <McpSkillsView />}
 
-      {/* 7. 专家模式: 工具库 */}
+      {/* 12. 专家模式: 工具库 */}
       {activeTab === "tools" && isExpertMode && (
         <ToolManager tools={tools} onUpdateTools={setTools} />
       )}
 
-      {/* 8. 专家模式: 字段迁移与容错 */}
+      {/* 13. 专家模式: 字段迁移与容错 */}
       {activeTab === "fields" && isExpertMode && <FieldMigrationView />}
 
-      {/* 9. 专家模式: JSONB 乐观锁并发调试 */}
+      {/* 14. 专家模式: JSONB 乐观锁并发调试 */}
       {activeTab === "concurrency" && isExpertMode && <JsonbConcurrencyView />}
 
-      {/* 10. 专家模式: 调用遥测与 Token 审计 */}
+      {/* 15. 专家模式: 调用遥测与 Token 审计 */}
       {activeTab === "telemetry" && isExpertMode && (
         <ExecutionHistory executions={executions} />
       )}
 
-      {/* 11. 专家模式: DDL 数据契约 */}
+      {/* 16. 专家模式: DDL 数据契约 */}
       {activeTab === "database" && isExpertMode && <DdlContractView />}
+
+      {/* 全局协同交流与打点评论抽屉 (In-Tool Realtime Collaboration Drawer) */}
+      <WorkspaceChatDrawer
+        onNavigateToTarget={(targetType) => {
+          if (targetType === "agent") setActiveTab("agents");
+          else if (targetType === "workflow") {
+            if (isExpertMode) setActiveTab("workflows");
+            else setActiveTab("hub");
+          } else if (targetType === "mcp") {
+            setActiveTab("mcp_market");
+          }
+        }}
+      />
 
       {/* Execution Drawer Modal Overlay */}
       {isExecutionDrawerOpen && currentWorkflow && isExpertMode && (
@@ -306,4 +464,3 @@ export default function App() {
     </AppShell>
   );
 }
-

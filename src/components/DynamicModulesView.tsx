@@ -14,26 +14,32 @@ import {
   Database,
   History,
   ShieldCheck,
+  LayoutGrid,
+  Code2,
+  Cpu,
+  Zap,
+  Kanban,
+  FileSpreadsheet,
 } from "lucide-react";
 import { DynamicModule, DynamicField, DynamicRecord } from "../types/database.ts";
 import { getFieldValue } from "../services/recordService.ts";
 
 export const DynamicModulesView: React.FC = () => {
-  const [selectedModuleId, setSelectedModuleId] = useState<string>("mod_leads");
+  const [selectedModuleId, setSelectedModuleId] = useState<string>("mod_devops");
 
-  // 模拟动态模块定义
+  // 跨领域通用业务空间模块 (Universal Dynamic Workspaces)
   const modules: DynamicModule[] = [
     {
-      id: "mod_leads",
+      id: "mod_devops",
       workspace_id: "ws-default",
-      name: "销售商机与客户线索",
-      slug: "leads",
+      name: "研发 DevOps 与代码审查 (DevOps)",
+      slug: "devops_reviews",
       type: "table",
-      icon: "Table",
-      description: "跨部门销售机会流转与线索动态记录表",
+      icon: "Code2",
+      description: "PR 审查记录、CI/CD 自动化流水线事件与代码漏洞检测动态流",
       config: {
-        form_submit_button_text: "提交线索",
-        form_success_message: "线索已成功入库！",
+        form_submit_button_text: "提交代码审查任务",
+        form_success_message: "代码审查任务已触发 AI 员工执行！",
         default_sort_order: "desc",
         visible_column_ids: [],
         page_size: 20,
@@ -44,17 +50,17 @@ export const DynamicModulesView: React.FC = () => {
       updated_at: new Date().toISOString(),
     },
     {
-      id: "mod_tickets",
+      id: "mod_design",
       workspace_id: "ws-default",
-      name: "客户工单与技术支持",
-      slug: "tickets",
+      name: "设计系统与项目敏捷看板 (Design & Sprint)",
+      slug: "design_sprints",
       type: "kanban",
       icon: "ListTodo",
-      description: "工单状态流转与自动派单追踪",
+      description: "跨平台 Figma 设计稿评审、UI 规范同步与敏捷故事流转",
       config: {
         kanban_group_field_id: "status",
-        form_submit_button_text: "提交工单",
-        form_success_message: "工单已提交给 AI 助手处理",
+        form_submit_button_text: "新建需求卡片",
+        form_success_message: "需求卡片已进入敏捷排期池",
         default_sort_order: "desc",
         visible_column_ids: [],
         page_size: 20,
@@ -64,22 +70,42 @@ export const DynamicModulesView: React.FC = () => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
+    {
+      id: "mod_finance",
+      workspace_id: "ws-default",
+      name: "财务精算与合规审计日志 (Finance)",
+      slug: "finance_audits",
+      type: "table",
+      icon: "ShieldCheck",
+      description: "发票三单校验、高风险交易预警与多币种汇率审计流水",
+      config: {
+        form_submit_button_text: "提交合规审计单",
+        form_success_message: "审计记录已持久化并执行 JSONB 乐观锁校验",
+        default_sort_order: "desc",
+        visible_column_ids: [],
+        page_size: 20,
+      },
+      order: 3,
+      is_system: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
   ];
 
-  // 模拟字段（包含 deprecated_keys 与 is_hidden）
+  // 研发模块字段
   const fields: DynamicField[] = [
     {
       id: "f_title",
-      module_id: "mod_leads",
-      name: "客户/企业名称",
-      field_key: "company_name",
+      module_id: "mod_devops",
+      name: "Pull Request / 审查任务",
+      field_key: "pr_title",
       field_type: "text",
       is_required: true,
       is_unique: false,
       is_primary: true,
       is_hidden: false,
-      deprecated_keys: ["client_name", "corp_title"], // 历史废弃键名
-      default_value: "未知客户",
+      deprecated_keys: ["task_title", "title"], // 历史废弃键名兼容
+      default_value: "PR #",
       validation_rules: null,
       options: null,
       field_order: 1,
@@ -87,269 +113,385 @@ export const DynamicModulesView: React.FC = () => {
       updated_at: new Date().toISOString(),
     },
     {
-      id: "f_amount",
-      module_id: "mod_leads",
-      name: "预计商机金额 (¥)",
-      field_key: "deal_amount",
-      field_type: "number",
-      is_required: false,
+      id: "f_repo",
+      module_id: "mod_devops",
+      name: "代码仓库 / 分支",
+      field_key: "repository_branch",
+      field_type: "text",
+      is_required: true,
       is_unique: false,
       is_primary: false,
       is_hidden: false,
-      deprecated_keys: ["budget", "estimated_revenue"],
-      default_value: 0,
-      validation_rules: { min: 0 },
+      deprecated_keys: ["repo_name", "git_ref"],
+      default_value: "org/main",
+      validation_rules: null,
       options: null,
       field_order: 2,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     {
-      id: "f_stage",
-      module_id: "mod_leads",
-      name: "商机阶段",
-      field_key: "deal_stage",
+      id: "f_status",
+      module_id: "mod_devops",
+      name: "审查状态",
+      field_key: "review_status",
       field_type: "select",
       is_required: true,
       is_unique: false,
       is_primary: false,
       is_hidden: false,
-      deprecated_keys: ["status", "pipeline_stage"],
-      default_value: "初次接触",
+      deprecated_keys: ["status", "state"],
+      default_value: "AI 审查通过",
       validation_rules: null,
       options: [
-        { label: "初次接触", value: "lead", color: "blue" },
-        { label: "需求对接", value: "discovery", color: "purple" },
-        { label: "方案报价", value: "proposal", color: "amber" },
-        { label: "赢单成交", value: "won", color: "emerald" },
+        { label: "待自动触发", value: "待自动触发", color: "blue" },
+        { label: "AI 审查中", value: "AI 审查中", color: "amber" },
+        { label: "AI 审查通过", value: "AI 审查通过", color: "emerald" },
+        { label: "发现潜在漏洞", value: "发现潜在漏洞", color: "rose" },
       ],
       field_order: 3,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     {
-      id: "f_contact",
-      module_id: "mod_leads",
-      name: "联系人邮箱",
-      field_key: "contact_email",
-      field_type: "text",
+      id: "f_score",
+      module_id: "mod_devops",
+      name: "代码质量分 (100分制)",
+      field_key: "quality_score",
+      field_type: "number",
       is_required: false,
       is_unique: false,
       is_primary: false,
       is_hidden: false,
-      deprecated_keys: ["email", "mail_addr"],
-      default_value: null,
-      validation_rules: null,
+      deprecated_keys: ["score", "rating"],
+      default_value: 95,
+      validation_rules: { min: 0, max: 100 },
       options: null,
       field_order: 4,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
     {
-      id: "f_internal_score",
-      module_id: "mod_leads",
-      name: "内部 AI 潜客打分 (已隐藏/软删除)",
-      field_key: "ai_score",
-      field_type: "number",
+      id: "f_deprecated_old",
+      module_id: "mod_devops",
+      name: "历史老版标记 (已软删除/隐藏)",
+      field_key: "legacy_flag",
+      field_type: "text",
       is_required: false,
       is_unique: false,
       is_primary: false,
-      is_hidden: true, // 软删除/隐藏字段
-      deprecated_keys: ["score_v1"],
+      is_hidden: true, // 软隐藏
+      deprecated_keys: ["old_tag"],
       default_value: null,
       validation_rules: null,
       options: null,
-      field_order: 5,
+      field_order: 99,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
   ];
 
-  // 模拟动态 JSONB 记录（演示数据容错解析与版本乐观锁）
-  const [records] = useState<DynamicRecord[]>([
+  // 研发记录模拟（包含乐观锁版本号）
+  const records: DynamicRecord[] = [
     {
-      id: "rec-001",
-      module_id: "mod_leads",
+      id: "rec_1",
+      module_id: "mod_devops",
       workspace_id: "ws-default",
       data: {
-        company_name: "未来数智科技（上海）有限公司",
-        deal_amount: 188000,
-        deal_stage: "方案报价",
-        contact_email: "contact@futuretech.ai",
+        pr_title: "feat(engine): 支持沙箱超时熔断与 AsyncFunction 隔离执行",
+        repository_branch: "ai-studio/core-engine:main",
+        review_status: "AI 审查通过",
+        quality_score: 98,
       },
-      version: 4,
-      created_by: "agent_sales",
-      updated_by: "agent_analyst",
+      version: 3,
+      created_by: "Alex (Staff Eng)",
+      updated_by: "DevOps Reviewer Agent",
       is_deleted: false,
-      created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-      updated_at: new Date().toISOString(),
+      created_at: "2026-08-28 09:12:00",
+      updated_at: "2026-08-28 09:12:45",
     },
     {
-      id: "rec-002",
-      module_id: "mod_leads",
+      id: "rec_2",
+      module_id: "mod_devops",
       workspace_id: "ws-default",
-      // 演示：该旧记录存放在 deprecated_keys 中（例如 client_name 与 budget）
       data: {
-        client_name: "云端智造集团 (历史格式数据)",
-        budget: 520000,
-        status: "需求对接",
-        mail_addr: "procurement@cloudcorp.cn",
+        // 使用旧键名触发 deprecated_keys 容错
+        title: "fix(mcp): 修复 GitHub Connector 双工握手连接超时重试",
+        repo_name: "ai-studio/connectors:feat-mcp",
+        status: "AI 审查中",
+        score: 89,
       },
       version: 1,
-      created_by: "system_import",
-      updated_by: null,
+      created_by: "David Kim",
+      updated_by: "Alex",
       is_deleted: false,
-      created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-      updated_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+      created_at: "2026-08-28 08:30:00",
+      updated_at: "2026-08-28 08:30:00",
     },
-  ]);
+    {
+      id: "rec_3",
+      module_id: "mod_devops",
+      workspace_id: "ws-default",
+      data: {
+        pr_title: "security(auth): 升级 MCP OAuth2 Scope 严格鉴权",
+        repository_branch: "ai-studio/security:patch-v2",
+        review_status: "发现潜在漏洞",
+        quality_score: 74,
+      },
+      version: 2,
+      created_by: "Sarah Chen",
+      updated_by: "DevOps Reviewer Agent",
+      is_deleted: false,
+      created_at: "2026-08-28 07:15:00",
+      updated_at: "2026-08-28 07:16:30",
+    },
+  ];
 
-  const activeModule = modules.find((m) => m.id === selectedModuleId) || modules[0];
-  const activeFields = fields.filter((f) => f.module_id === activeModule.id && !f.is_hidden);
+  const currentModule = modules.find((m) => m.id === selectedModuleId) || modules[0];
+  const activeFields = fields.filter((f) => !f.is_hidden);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
-      {/* Module Navigation & Sub Header */}
-      <div className="bg-slate-900/90 border-b border-slate-800 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-xl">
-            <Table className="w-5 h-5" />
+    <div className="flex-1 flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+      {/* 1. Header Toolbar */}
+      <div className="h-14 px-4 sm:px-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/60 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0">
+            <LayoutGrid className="w-4 h-4" />
           </div>
-          <div>
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              {activeModule.name}
-              <span className="text-xs font-normal text-slate-400 font-mono">
-                slug: /{activeModule.slug}
+          <div className="min-w-0">
+            <h1 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 sm:gap-2 truncate">
+              <span>跨领域业务空间</span>
+              <span className="text-[9px] sm:text-[10px] font-mono font-medium px-1.5 sm:px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
+                Workspaces
               </span>
-            </h2>
-            <p className="text-xs text-slate-400">{activeModule.description}</p>
+            </h1>
+            <p className="text-[10px] sm:text-[11px] text-slate-400 truncate hidden xs:block">
+              DevOps 审查、敏捷看板、财务审计多维数据流
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Module Selector Pill */}
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-            {modules.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setSelectedModuleId(m.id)}
-                className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
-                  selectedModuleId === m.id
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {m.name}
-              </button>
-            ))}
-          </div>
-
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-sm transition-colors">
+        <div className="flex items-center gap-2 shrink-0">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-md shadow-indigo-950/50 transition-all">
             <Plus className="w-3.5 h-3.5" />
-            <span>新建记录</span>
+            <span className="hidden sm:inline">新建业务记录</span>
+            <span className="sm:hidden">新建</span>
           </button>
         </div>
       </div>
 
-      {/* Main Records Table Area */}
-      <div className="flex-1 overflow-auto p-6 space-y-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">记录 ID</th>
-                  {activeFields.map((f) => (
-                    <th key={f.id} className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <span>{f.name}</span>
-                        <span className="text-[9px] text-slate-500 font-normal">
-                          ({f.field_key})
-                        </span>
-                      </div>
-                    </th>
-                  ))}
-                  <th className="py-3 px-4 text-center">乐观锁版本</th>
-                  <th className="py-3 px-4">创建/更新者</th>
-                  <th className="py-3 px-4 text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/80">
-                {records.map((rec) => (
-                  <tr key={rec.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 px-4 font-mono text-slate-400">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        <span className="font-semibold text-slate-300">{rec.id}</span>
-                      </div>
-                    </td>
+      {/* 2. Workspace Modules Tabs */}
+      <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-slate-800/80 bg-slate-950/40 flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none">
+        {modules.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setSelectedModuleId(m.id)}
+            className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shrink-0 border ${
+              selectedModuleId === m.id
+                ? "bg-indigo-600/20 text-indigo-300 border-indigo-500/50 shadow-sm"
+                : "bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
+            }`}
+          >
+            {m.id === "mod_devops" && <Code2 className="w-3.5 h-3.5 text-cyan-400" />}
+            {m.id === "mod_design" && <Kanban className="w-3.5 h-3.5 text-amber-400" />}
+            {m.id === "mod_finance" && <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />}
+            <span className="whitespace-nowrap">{m.name}</span>
+          </button>
+        ))}
+      </div>
 
-                    {/* Dynamic Field Values with getFieldValue fallback */}
-                    {activeFields.map((f) => {
-                      const value = getFieldValue(rec.data, f);
-                      const isDeprecatedFallback =
-                        !Object.prototype.hasOwnProperty.call(rec.data, f.field_key) &&
-                        value !== undefined;
-
-                      return (
-                        <td key={f.id} className="py-3.5 px-4 text-slate-200">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-medium">
-                              {value !== undefined && value !== null
-                                ? String(value)
-                                : "—"}
-                            </span>
-                            {isDeprecatedFallback && (
-                              <span
-                                title="通过 deprecated_keys 容错自动回溯解析"
-                                className="px-1 py-0.2 text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded"
-                              >
-                                兼容旧键
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-
-                    {/* Version Column */}
-                    <td className="py-3.5 px-4 text-center">
-                      <span className="px-2 py-0.5 text-[11px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-md">
-                        v{rec.version}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
-                      <div>{rec.updated_by || rec.created_by || "system"}</div>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* 3. Main Data Table (Desktop) & Card List (Mobile) with Dynamic Schema */}
+      <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4">
+        {/* Module Description Banner */}
+        <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+          <div className="space-y-1 min-w-0">
+            <div className="font-bold text-white flex items-center gap-1.5 flex-wrap">
+              <span>{currentModule.name}</span>
+              <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                slug: {currentModule.slug}
+              </span>
+            </div>
+            <p className="text-slate-400 text-[11px] sm:text-xs">{currentModule.description}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[10px] sm:text-[11px] text-indigo-300/80 font-mono">
+              活跃字段: {activeFields.length} 项 (已隐藏 1 项废弃字段)
+            </span>
           </div>
         </div>
 
-        {/* Feature Banner: JSONB Concurrency & Schema Migration */}
-        <div className="p-4 bg-indigo-950/30 border border-indigo-800/40 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-indigo-400" />
-            <div>
-              <h4 className="text-xs font-bold text-indigo-200">
-                JSONB 动态字段容错机制已激活 (getFieldValue)
-              </h4>
-              <p className="text-[11px] text-slate-400">
-                支持无锁平滑字段键名迁移（例如 client_name 自动映射到 company_name），保障数据高可用。
-              </p>
-            </div>
-          </div>
+        {/* 3A. Mobile Touch Card Stream (< 768px) */}
+        <div className="block md:hidden space-y-3">
+          {records.map((record, index) => {
+            const statusField = activeFields.find((f) => f.field_type === "select");
+            const statusValue = statusField ? String(getFieldValue(record.data, statusField) || "--") : null;
+            const primaryField = activeFields.find((f) => f.is_primary) || activeFields[0];
+            const primaryValue = primaryField ? String(getFieldValue(record.data, primaryField) || "未命名记录") : `记录 #${index + 1}`;
+            const otherFields = activeFields.filter((f) => f.id !== primaryField?.id && f.id !== statusField?.id);
+
+            return (
+              <div
+                key={record.id}
+                className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-3 shadow-md hover:border-slate-700 transition-colors"
+              >
+                {/* Card Top: Title & Status Badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 mb-1">
+                      <span>#{index + 1}</span>
+                      <span>·</span>
+                      <span className="text-purple-300 bg-purple-950/60 px-1.5 py-0.2 rounded border border-purple-800/40">
+                        v{record.version} 乐观锁
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-white text-xs leading-snug line-clamp-2">
+                      {primaryValue}
+                    </h3>
+                  </div>
+
+                  {statusValue && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${
+                        statusValue === "AI 审查通过"
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                          : statusValue === "AI 审查中"
+                          ? "bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse"
+                          : statusValue === "发现潜在漏洞"
+                          ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                          : "bg-slate-800 text-slate-300 border-slate-700"
+                      }`}
+                    >
+                      <CheckCircle2 className="w-2.5 h-2.5" />
+                      {statusValue}
+                    </span>
+                  )}
+                </div>
+
+                {/* Card Body: Dynamic Key-Values */}
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-slate-800/60 bg-slate-950/40 -mx-3.5 -mb-1 px-3.5 py-2.5 rounded-b-xl">
+                  {otherFields.map((field) => {
+                    const value = getFieldValue(record.data, field);
+                    const isScore = field.field_key === "quality_score";
+
+                    return (
+                      <div key={field.id} className="min-w-0">
+                        <span className="text-[10px] text-slate-400 block truncate">{field.name}:</span>
+                        {isScore ? (
+                          <span className="font-mono font-bold text-indigo-300 text-xs">
+                            {String(value || "--")} 分
+                          </span>
+                        ) : (
+                          <span className="text-slate-200 font-medium truncate block">
+                            {String(value || "--")}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-400 block truncate">更新者:</span>
+                    <span className="text-slate-300 text-[10px] truncate block font-mono">
+                      {record.updated_by || record.created_by || "System"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Action Row */}
+                <div className="flex items-center justify-between pt-1 text-[10px] text-slate-500">
+                  <span>{record.updated_at || record.created_at}</span>
+                  <button className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium transition-colors">
+                    <Edit2 className="w-3 h-3" />
+                    <span>编辑</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 3B. Desktop Dynamic Records Table (>= 768px) */}
+        <div className="hidden md:block bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold">
+              <tr>
+                <th className="py-3 px-4 w-12 text-center">#</th>
+                {activeFields.map((field) => (
+                  <th key={field.id} className="py-3 px-4 font-mono">
+                    <div className="flex items-center gap-1 text-slate-200">
+                      <span>{field.name}</span>
+                      {field.deprecated_keys && field.deprecated_keys.length > 0 && (
+                        <span
+                          className="text-[9px] text-indigo-400 font-normal px-1 rounded bg-indigo-950/60 border border-indigo-800/40"
+                          title={`兼容旧键名: ${field.deprecated_keys.join(", ")}`}
+                        >
+                          容错
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
+                <th className="py-3 px-4 text-slate-400 font-mono w-24">锁版本 (v)</th>
+                <th className="py-3 px-4 text-slate-400 font-mono w-36">更新者</th>
+                <th className="py-3 px-4 text-right w-24">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              {records.map((record, index) => (
+                <tr key={record.id} className="hover:bg-slate-800/40 transition-colors">
+                  <td className="py-3 px-4 text-center font-mono text-slate-500 text-[11px]">
+                    {index + 1}
+                  </td>
+                  {activeFields.map((field) => {
+                    const value = getFieldValue(record.data, field);
+                    const isSelect = field.field_type === "select";
+
+                    return (
+                      <td key={field.id} className="py-3 px-4">
+                        {isSelect ? (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              value === "AI 审查通过"
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                : value === "AI 审查中"
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse"
+                                : value === "发现潜在漏洞"
+                                ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                                : "bg-slate-800 text-slate-300 border-slate-700"
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            {String(value || "--")}
+                          </span>
+                        ) : field.field_key === "quality_score" ? (
+                          <span className="font-mono font-bold text-indigo-300">
+                            {String(value || "--")} 分
+                          </span>
+                        ) : (
+                          <span className="text-slate-200 font-medium">{String(value || "--")}</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="py-3 px-4 font-mono text-[11px] text-purple-300">
+                    <span className="px-2 py-0.5 rounded bg-purple-950/40 border border-purple-800/40">
+                      v{record.version}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-[11px] text-slate-400 truncate max-w-[130px]">
+                    {record.updated_by || record.created_by || "System"}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                      title="编辑记录"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

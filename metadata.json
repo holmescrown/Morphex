@@ -1,6 +1,6 @@
 {
-  "name": "开箱即用型无代码 Agent 平台",
-  "description": "Enterprise-grade no-code AI Agent visual workflow builder and execution engine with strict typing, deterministic state machines, and real-time trace telemetry.",
+  "name": "Universal AI Studio",
+  "description": "跨领域通用、轻量协同的 AI Agent 工作台，支持可视化编排、MCP 生态直连与团队实时协作。",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
